@@ -1,4 +1,3 @@
-from collections import deque
 from graphviz import Graph as GraphVizGraph
 
 class Path:
@@ -22,9 +21,16 @@ class Graph:
         if path.key not in self.paths.keys():
             self.paths[path.key] = [pathBack]
         else:
-            self.paths[path.key].append(pathBack)  
+            self.paths[path.key].append(pathBack)
 
+class Vertex:
+    def __init__(self, key: str, cost, previousKey: str):
+        self.key         = key
+        self.cost        = cost
+        self.previousKey = previousKey
     
+    def __str__(self):
+        return f"key: {self.key}, cost: {self.cost}, previousKey: {self.previousKey}"
 
 def dumb_graph():
     graph = Graph()
@@ -37,15 +43,6 @@ def dumb_graph():
     graph.addPath( key="D", path=Path(key="End", cost=7))
 
     return graph
-
-class Vertex:
-    def __init__(self, key: str, cost, previousKey: str):
-        self.key         = key
-        self.cost        = cost
-        self.previousKey = previousKey
-    
-    def __str__(self):
-        return f"key: {self.key}, cost: {self.cost}, previousKey: {self.previousKey}"
 
 def undefined_vertex():
     return Vertex(key = "", cost = float("infinity"), previousKey = None)
@@ -65,47 +62,6 @@ def lowest_cost_vertex(queue: set, vertexes: dict):
     
     return lowestCostVertex
 
-def dijkstra_search(graph, start: str, target: str):
-    queue = deque()
-    vertexes = {}
-
-    for key in graph.paths.keys():
-        queue.append(key)
-        vertexes[key] =  initialized_vertex(key)
-    
-    if start not in vertexes.keys():
-        raise KeyError("start node was not found in graph")
-    if target not in vertexes.keys():
-        raise KeyError("target node was not found in graph")
-    
-    vertexes[start].cost = 0
-    
-    # While queue is not empty
-    while len(queue) != 0:
-
-        current = lowest_cost_vertex(queue, vertexes)
-        queue.remove(current.key)
-        if current.key == target:
-            break
-
-        for path in graph.paths[current.key]:
-            alt = current.cost + path.cost
-            if alt < vertexes[path.key].cost:
-                vertexes[path.key].cost = alt
-                vertexes[path.key].previousKey = current.key
-
-    # Now read shortest path from start to target by reverse iteration
-    current = vertexes[target]
-
-    shortestPath = deque()
-
-    if current.previousKey is not None or current.key == start.key:
-        while current.previousKey is not None:
-            shortestPath.insert(0, current.key)
-            current = vertexes[current.previousKey]
-    
-    return ",".join(shortestPath)
-
 def vizualize_graph(graph):
     g = GraphVizGraph('graph')
     g.attr('node', shape='circle', size='2,2')
@@ -118,11 +74,3 @@ def vizualize_graph(graph):
                 g.edge(key, path.key, label=str(path.cost))
                 seenPairs.append(f"{key}{path.key}")
     g.render()
-
-def main():
-    vizualize_graph(dumb_graph())
-    
-    print("Shortest path from Start:", dijkstra_search(graph = dumb_graph(), start = "Start", target = "End"))
-
-if __name__ == "__main__":
-    main()
