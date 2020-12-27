@@ -1,14 +1,17 @@
 from collections import deque
 import pathgraph
 
-def dijkstra_search(graph, start: str, target: str):
+def dijkstra_search(graph: pathgraph.Graph, start: str, target: str):
     queue = deque()
     vertexes = {}
 
-    for key in graph.paths.keys():
+    if start == target:
+        return []
+
+    for key in graph.path_keys():
         queue.append(key)
-        vertexes[key] =  pathgraph.initialized_vertex(key)
-    
+        vertexes[key] = pathgraph.initialized_vertex(key)
+
     if start not in vertexes.keys():
         raise KeyError("start node was not found in graph")
     if target not in vertexes.keys():
@@ -18,11 +21,14 @@ def dijkstra_search(graph, start: str, target: str):
     
     # While queue is not empty
     while len(queue) != 0:
-
         current = pathgraph.lowest_cost_vertex(queue, vertexes)
         queue.remove(current.key)
+
         if current.key == target:
             break
+
+        if current.key not in graph.paths.keys():
+            raise Exception("It is impossible to reach the target with the current stored paths")
 
         for path in graph.paths[current.key]:
             alt = current.cost + path.cost
@@ -40,4 +46,4 @@ def dijkstra_search(graph, start: str, target: str):
             shortestPath.insert(0, current.key)
             current = vertexes[current.previousKey]
     
-    return ",".join(shortestPath)
+    return shortestPath

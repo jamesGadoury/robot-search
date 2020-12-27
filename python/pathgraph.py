@@ -1,4 +1,4 @@
-from graphviz import Graph as GraphVizGraph
+import graphviz
 
 class Path:
     def __init__(self, key, cost):
@@ -6,22 +6,66 @@ class Path:
         self.cost = cost
 
 class Graph:
-    """ Very poorly implemented graph """
     def __init__(self):
         self.paths = {}
-
-    def addPath(self, key: str, path: Path):
+    
+    def add_path(self, key: str, path: Path):
         if key not in self.paths.keys():
             self.paths[key] = [path]
         else:
             self.paths[key].append(path)
+    
+    def path_keys(self):
+        """ oh no - this is oh so confusing... how can I be better? """
+        keys = []
+        for key, paths in self.paths.items():
+            if key not in keys:
+                keys.append(key)
+            for path in paths:
+                if path.key not in keys:
+                    keys.append(path.key)
         
-        # now that path is added to key node - add reverse path
-        pathBack = Path(key=key, cost=path.cost)
-        if path.key not in self.paths.keys():
-            self.paths[path.key] = [pathBack]
-        else:
-            self.paths[path.key].append(pathBack)
+        return keys
+
+class UndirectedGraph(Graph):
+    """ Very poorly implemented graph """
+    def add_path(self, key: str, path: Path):
+        Graph.add_path(self, key=key, path=path)
+        Graph.add_path(self, key=path.key, path=Path(key=key, cost=path.cost))
+    
+    def as_graphviz(self, name: str):
+        g = graphviz.Graph(name)
+        g.attr('node', shape='circle')
+
+        seenPairs = []
+        for key in self.paths.keys():
+            # f.node(key)
+            for path in self.paths[key]:
+                if f"{path.key}{key}" not in seenPairs:
+                    g.edge(key, path.key, label=str(path.cost))
+                    seenPairs.append(f"{key}{path.key}")
+        return g
+    
+    def save_vizualization(self, name: str):
+        self.as_graphviz(name).render()
+
+class DirectedGraph(Graph):
+    def add_path(self, key: str, path: Path):
+        Graph.add_path(self, key=key, path=path)
+    
+    def as_graphviz(self, name: str):
+        g = graphviz.Digraph(name)
+        g.attr('node', shape='circle')
+
+        for key in self.paths.keys():
+            # f.node(key)
+            for path in self.paths[key]:
+                g.edge(key, path.key, label=str(path.cost))
+
+        return g
+    
+    def save_vizualization(self, name: str):
+        self.as_graphviz(name).render()
 
 class Vertex:
     def __init__(self, key: str, cost, previousKey: str):
@@ -32,15 +76,21 @@ class Vertex:
     def __str__(self):
         return f"key: {self.key}, cost: {self.cost}, previousKey: {self.previousKey}"
 
-def dumb_graph():
-    graph = Graph()
-    graph.addPath( key="Start", path=Path(key="A", cost=4) )
-    graph.addPath( key="A", path=Path(key="B", cost=8) )
-    graph.addPath( key="B", path=Path(key="End", cost=9) )
+def dumb_graph(type: str):
+    if type == "undirected":
+        graph = UndirectedGraph()
+    elif type == "directed":
+        graph = DirectedGraph()
+    else:
+        raise TypeError("dumb_graph called with wrong type argument")
 
-    graph.addPath( key="Start", path=Path(key="C", cost=3) )
-    graph.addPath( key="C", path=Path(key="D", cost=2))
-    graph.addPath( key="D", path=Path(key="End", cost=7))
+    graph.add_path( key="Start", path=Path(key="A", cost=4) )
+    graph.add_path( key="A", path=Path(key="B", cost=8) )
+    graph.add_path( key="B", path=Path(key="End", cost=9) )
+
+    graph.add_path( key="Start", path=Path(key="C", cost=3) )
+    graph.add_path( key="C", path=Path(key="D", cost=2))
+    graph.add_path( key="D", path=Path(key="End", cost=7))
 
     return graph
 
@@ -61,16 +111,3 @@ def lowest_cost_vertex(queue: set, vertexes: dict):
             lowestCostVertex = vertex
     
     return lowestCostVertex
-
-def vizualize_graph(graph):
-    g = GraphVizGraph('graph')
-    g.attr('node', shape='circle', size='2,2')
-
-    seenPairs = []
-    for key in graph.paths.keys():
-        # f.node(key)
-        for path in graph.paths[key]:
-            if f"{path.key}{key}" not in seenPairs:
-                g.edge(key, path.key, label=str(path.cost))
-                seenPairs.append(f"{key}{path.key}")
-    g.render()
