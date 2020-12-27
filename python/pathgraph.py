@@ -1,4 +1,5 @@
 import graphviz
+from numpy.random import randint
 
 class Path:
     def __init__(self, key, cost):
@@ -9,11 +10,31 @@ class Graph:
     def __init__(self):
         self.paths = {}
     
+    def key_path_pair_in_paths(self, key: str, path: Path):
+        fromToPair = f"{key}{path.key}" 
+
+        for fromKey, paths in self.paths.items():
+            for toPath in paths:
+                if f"{fromKey}{toPath.key}" == fromToPair:
+                    return True
+        
+        return False
+    
     def add_path(self, key: str, path: Path):
+        # Check if this path already exists
+        if self.key_path_pair_in_paths(key=key, path=path):
+            return False
+
+        # Check if from key is equal to to key
+        if key == path.key:
+            return False
+
         if key not in self.paths.keys():
             self.paths[key] = [path]
         else:
             self.paths[key].append(path)
+        
+        return True
     
     def path_keys(self):
         """ oh no - this is oh so confusing... how can I be better? """
@@ -30,8 +51,7 @@ class Graph:
 class UndirectedGraph(Graph):
     """ Very poorly implemented graph """
     def add_path(self, key: str, path: Path):
-        Graph.add_path(self, key=key, path=path)
-        Graph.add_path(self, key=path.key, path=Path(key=key, cost=path.cost))
+        return Graph.add_path(self, key=key, path=path) and Graph.add_path(self, key=path.key, path=Path(key=key, cost=path.cost))
     
     def as_graphviz(self, name: str):
         g = graphviz.Graph(name)
@@ -51,7 +71,7 @@ class UndirectedGraph(Graph):
 
 class DirectedGraph(Graph):
     def add_path(self, key: str, path: Path):
-        Graph.add_path(self, key=key, path=path)
+        return Graph.add_path(self, key=key, path=path)
     
     def as_graphviz(self, name: str):
         g = graphviz.Digraph(name)
@@ -76,13 +96,16 @@ class Vertex:
     def __str__(self):
         return f"key: {self.key}, cost: {self.cost}, previousKey: {self.previousKey}"
 
-def dumb_graph(type: str):
+def graph_by_type(type: str):
     if type == "undirected":
-        graph = UndirectedGraph()
+        return UndirectedGraph()
     elif type == "directed":
-        graph = DirectedGraph()
+        return DirectedGraph()
     else:
-        raise TypeError("dumb_graph called with wrong type argument")
+        raise TypeError("graph_by_type called with wrong type argument")
+
+def dumb_graph(type: str="undirected"):
+    graph = graph_by_type(type)
 
     graph.add_path( key="Start", path=Path(key="A", cost=4) )
     graph.add_path( key="A", path=Path(key="B", cost=8) )
@@ -92,6 +115,25 @@ def dumb_graph(type: str):
     graph.add_path( key="C", path=Path(key="D", cost=2))
     graph.add_path( key="D", path=Path(key="End", cost=7))
 
+    return graph
+
+def random_graph(vertexCount: int, pathCount: int, minCost: int=1, maxCost: int=10, type: str="undirected"):
+    graph = graph_by_type(type)
+
+    vertices = []
+
+    for i in range(vertexCount):
+        vertices.append(str(i))
+
+    addedCount = 0
+    while addedCount != pathCount:
+        # Don't bother w/ ensuring from key doesn't match to key, Graph will not add path if from key and to key match
+        fromKey = vertices[int(randint(0, vertexCount))]
+        toKey   = vertices[int(randint(0, vertexCount))]
+        cost    = randint(minCost, maxCost+1)
+        
+        if graph.add_path( key=fromKey, path=Path(key=toKey, cost=cost) ):
+            addedCount += 1
     return graph
 
 def undefined_vertex():
