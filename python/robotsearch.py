@@ -8,7 +8,7 @@ def dijkstra_search(graph: pathgraph.Graph, start: str, target: str):
     if start == target:
         return []
 
-    for key in graph.path_keys():
+    for key in graph.vertices():
         queue.append(key)
         vertexes[key] = pathgraph.initialized_vertex(key)
 
@@ -27,17 +27,18 @@ def dijkstra_search(graph: pathgraph.Graph, start: str, target: str):
         if current.key == target:
             break
 
-        if current.key not in graph.paths.keys():
-            # dead end - if there are no more paths then it is impossible to reach the destination:
+        if current.key not in graph.edges.keys():
+            # dead end - if there are no more possible from keys then it is impossible to reach the destination:
             if len(queue) == 0:
-                raise Exception("It is impossible to reach the target with the current stored paths")
+                return pathgraph.impossible_path()
+
             continue
 
-        for path in graph.paths[current.key]:
-            alt = current.cost + path.cost
-            if alt < vertexes[path.key].cost:
-                vertexes[path.key].cost = alt
-                vertexes[path.key].previousKey = current.key
+        for destination in graph.edges[current.key]:
+            alt = current.cost + destination.cost
+            if alt < vertexes[destination.key].cost:
+                vertexes[destination.key].cost = alt
+                vertexes[destination.key].previousKey = current.key
 
     # Now read shortest path from start to target by reverse iteration
     current = vertexes[target]
@@ -49,7 +50,7 @@ def dijkstra_search(graph: pathgraph.Graph, start: str, target: str):
             shortestPath.insert(0, current.key)
             current = vertexes[current.previousKey]
     
-    return shortestPath
+    return pathgraph.Path(steps=shortestPath, cost=vertexes[target].cost, possible=True)
 
 def dijkstra_search_and_display_string(graph: pathgraph.Graph, start: str, target: str):
-    return f"Shortest path from {start} to {target} is {','.join(dijkstra_search(graph=graph, start=start, target=target))}"
+    return f"Shortest path from {start} to {target}:\n{dijkstra_search(graph, start, target)}"

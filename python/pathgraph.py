@@ -1,86 +1,86 @@
 import graphviz
 from numpy.random import randint
+from collections import deque
 
-class Path:
+class DestinationNode:
     def __init__(self, key, cost):
         self.key  = key
         self.cost = cost
 
 class Graph:
     def __init__(self):
-        self.paths = {}
+        self.edges = {}
     
-    def key_path_pair_in_paths(self, key: str, path: Path):
-        fromToPair = f"{key}{path.key}" 
+    def key_path_pair_in_edges(self, fromKey: str, destination: DestinationNode):
+        fromToPair = f"{fromKey}{destination.key}" 
 
-        for fromKey, paths in self.paths.items():
-            for toPath in paths:
-                if f"{fromKey}{toPath.key}" == fromToPair:
+        for key, edges in self.edges.items():
+            for destination in edges:
+                if f"{key}{destination.key}" == fromToPair:
                     return True
         
         return False
     
-    def add_path(self, key: str, path: Path):
+    def add_edge(self, fromKey: str, destination: DestinationNode):
         # Check if this path already exists
-        if self.key_path_pair_in_paths(key=key, path=path):
+        if self.key_path_pair_in_edges(fromKey, destination):
             return False
 
         # Check if from key is equal to to key
-        if key == path.key:
+        if fromKey == destination.key:
             return False
 
-        if key not in self.paths.keys():
-            self.paths[key] = [path]
+        if fromKey not in self.edges.keys():
+            self.edges[fromKey] = [destination]
         else:
-            self.paths[key].append(path)
+            self.edges[fromKey].append(destination)
         
         return True
     
-    def path_keys(self):
-        """ oh no - this is oh so confusing... how can I be better? """
-        keys = []
-        for key, paths in self.paths.items():
-            if key not in keys:
-                keys.append(key)
-            for path in paths:
-                if path.key not in keys:
-                    keys.append(path.key)
+    def vertices(self):
+        """ the state of vertices is captured in edges - do not store it separately """
+        vertices = []
+        for key, destinations in self.edges.items():
+            if key not in vertices:
+                vertices.append(key)
+            for destination in destinations:
+                if destination.key not in vertices:
+                    vertices.append(destination.key)
         
-        return keys
+        return vertices
 
 class UndirectedGraph(Graph):
-    """ Very poorly implemented graph """
-    def add_path(self, key: str, path: Path):
-        return Graph.add_path(self, key=key, path=path) and Graph.add_path(self, key=path.key, path=Path(key=key, cost=path.cost))
+    def add_edge(self, fromKey: str, destination: DestinationNode):
+        return Graph.add_edge(self, fromKey, destination) and Graph.add_edge(self, fromKey=destination.key, destination=DestinationNode(key=fromKey, cost=destination.cost))
     
     def as_graphviz(self, name: str):
         g = graphviz.Graph(name)
         g.attr('node', shape='circle')
 
         seenPairs = []
-        for key in self.paths.keys():
+        for fromKey in self.edges.keys():
             # f.node(key)
-            for path in self.paths[key]:
-                if f"{path.key}{key}" not in seenPairs:
-                    g.edge(key, path.key, label=str(path.cost))
-                    seenPairs.append(f"{key}{path.key}")
+            for destination in self.edges[fromKey]:
+                if f"{destination.key}{fromKey}" not in seenPairs:
+                    g.edge(fromKey, destination.key, label=str(destination.cost))
+                    seenPairs.append(f"{fromKey}{destination.key}")
         return g
     
     def save_vizualization(self, name: str):
         self.as_graphviz(name).render()
 
 class DirectedGraph(Graph):
-    def add_path(self, key: str, path: Path):
-        return Graph.add_path(self, key=key, path=path)
+    def add_edge(self, fromKey: str, destination: DestinationNode):
+        return Graph.add_edge(self, fromKey, destination)
     
     def as_graphviz(self, name: str):
         g = graphviz.Digraph(name)
         g.attr('node', shape='circle')
 
-        for key in self.paths.keys():
+        for fromKey in self.edges.keys():
             # f.node(key)
-            for path in self.paths[key]:
-                g.edge(key, path.key, label=str(path.cost))
+            for destination in self.edges[fromKey]:
+                g.edge(fromKey, destination.key, label=str(destination.cost))
 
         return g
     
@@ -96,6 +96,16 @@ class Vertex:
     def __str__(self):
         return f"key: {self.key}, cost: {self.cost}, previousKey: {self.previousKey}"
 
+class Path:
+    def __init__(self, steps: deque, cost: int, possible: True):
+        self.steps    = steps
+        self.cost     = cost
+        self.possible = possible
+    
+    def __str__(self):
+        return f"Steps: {','.join(self.steps)}\nCost: {self.cost}"
+    
+
 def graph_by_type(type: str):
     if type == "undirected":
         return UndirectedGraph()
@@ -107,13 +117,13 @@ def graph_by_type(type: str):
 def dumb_graph(type: str="undirected"):
     graph = graph_by_type(type)
 
-    graph.add_path( key="Start", path=Path(key="A", cost=4) )
-    graph.add_path( key="A", path=Path(key="B", cost=8) )
-    graph.add_path( key="B", path=Path(key="End", cost=9) )
+    graph.add_edge( fromKey="Start", destination=DestinationNode(key="A", cost=4) )
+    graph.add_edge( fromKey="A", destination=DestinationNode(key="B", cost=8) )
+    graph.add_edge( fromKey="B", destination=DestinationNode(key="End", cost=9) )
 
-    graph.add_path( key="Start", path=Path(key="C", cost=3) )
-    graph.add_path( key="C", path=Path(key="D", cost=2))
-    graph.add_path( key="D", path=Path(key="End", cost=7))
+    graph.add_edge( fromKey="Start", destination=DestinationNode(key="C", cost=3) )
+    graph.add_edge( fromKey="C", destination=DestinationNode(key="D", cost=2))
+    graph.add_edge( fromKey="D", destination=DestinationNode(key="End", cost=7))
 
     return graph
 
@@ -132,7 +142,7 @@ def random_graph(vertexCount: int, pathCount: int, minCost: int=1, maxCost: int=
         toKey   = vertices[int(randint(0, vertexCount))]
         cost    = randint(minCost, maxCost+1)
         
-        if graph.add_path( key=fromKey, path=Path(key=toKey, cost=cost) ):
+        if graph.add_edge( fromKey=fromKey, destination=DestinationNode(key=toKey, cost=cost) ):
             addedCount += 1
     return graph
 
@@ -153,3 +163,6 @@ def lowest_cost_vertex(queue: set, vertexes: dict):
             lowestCostVertex = vertex
     
     return lowestCostVertex
+
+def impossible_path():
+    return Path(steps=deque(), cost=float("infinity"), possible=False)

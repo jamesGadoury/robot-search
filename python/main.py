@@ -11,16 +11,16 @@ class TestGraphMethods(unittest.TestCase):
         self.assertTrue(isinstance(pathgraph.graph_by_type("directed"), pathgraph.DirectedGraph))
 
     def test_add_duplicate_path_undirected(self):
-        graph = pathgraph.graph_by_type("undirected")
-        path  = pathgraph.Path("B", 1)
-        self.assertTrue(graph.add_path(key="A", path=path))
-        self.assertFalse(graph.add_path(key="A", path=path))
+        graph      = pathgraph.graph_by_type("undirected")
+        destination = pathgraph.DestinationNode("B", 1)
+        self.assertTrue(graph.add_edge(fromKey="A", destination=destination))
+        self.assertFalse(graph.add_edge(fromKey="A", destination=destination))
     
     def test_add_duplicate_path_directed(self):
         graph=pathgraph.graph_by_type("directed")
-        path  = pathgraph.Path("B", 1)
-        self.assertTrue(graph.add_path(key="A", path=path))
-        self.assertFalse(graph.add_path(key="A", path=path))
+        destination = pathgraph.DestinationNode("B", 1)
+        self.assertTrue(graph.add_edge(fromKey="A", destination=destination))
+        self.assertFalse(graph.add_edge(fromKey="A", destination=destination))
 
 def main():
     unittest.main()
