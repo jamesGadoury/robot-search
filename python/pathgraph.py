@@ -87,15 +87,6 @@ class DirectedGraph(Graph):
     def save_vizualization(self, name: str):
         self.as_graphviz(name).render()
 
-class Vertex:
-    def __init__(self, key: str, cost, previousKey: str):
-        self.key         = key
-        self.cost        = cost
-        self.previousKey = previousKey
-    
-    def __str__(self):
-        return f"key: {self.key}, cost: {self.cost}, previousKey: {self.previousKey}"
-
 class Path:
     def __init__(self, steps: deque, cost: int, possible: True):
         self.steps    = steps
@@ -103,7 +94,7 @@ class Path:
         self.possible = possible
     
     def __str__(self):
-        return f"Steps: {','.join(self.steps)}\nCost: {self.cost}"
+        return f"Steps: {','.join(self.steps)}\nCost: {self.cost}\nPossible: {self.possible}"
     
 
 def graph_by_type(type: str):
@@ -145,24 +136,6 @@ def random_graph(vertexCount: int, pathCount: int, minCost: int=1, maxCost: int=
         if graph.add_edge( fromKey=fromKey, destination=DestinationNode(key=toKey, cost=cost) ):
             addedCount += 1
     return graph
-
-def undefined_vertex():
-    return Vertex(key = "", cost = float("infinity"), previousKey = None)
-
-def initialized_vertex(key: str):
-    vertex = undefined_vertex()
-    vertex.key = key
-    return vertex
-
-def lowest_cost_vertex(queue: set, vertexes: dict):
-    lowestCostVertex = undefined_vertex()
-
-    for key in queue:
-        vertex = vertexes[key]
-        if lowestCostVertex.cost > vertex.cost:
-            lowestCostVertex = vertex
-    
-    return lowestCostVertex
 
 def impossible_path():
     return Path(steps=deque(), cost=float("infinity"), possible=False)

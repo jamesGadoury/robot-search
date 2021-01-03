@@ -1,6 +1,33 @@
 from collections import deque
 import pathgraph
 
+class Vertex:
+    def __init__(self, key: str, cost, previousKey: str):
+        self.key         = key
+        self.cost        = cost
+        self.previousKey = previousKey
+    
+    def __str__(self):
+        return f"key: {self.key}, cost: {self.cost}, previousKey: {self.previousKey}"
+
+def undefined_vertex():
+    return Vertex(key = "", cost = float("infinity"), previousKey = None)
+
+def initialized_vertex(key: str):
+    vertex = undefined_vertex()
+    vertex.key = key
+    return vertex
+
+def lowest_cost_vertex(queue: set, vertexes: dict):
+    lowestCostVertex = undefined_vertex()
+
+    for key in queue:
+        vertex = vertexes[key]
+        if lowestCostVertex.cost > vertex.cost:
+            lowestCostVertex = vertex
+    
+    return lowestCostVertex
+
 def dijkstra_search(graph: pathgraph.Graph, start: str, target: str):
     queue = deque()
     vertexes = {}
@@ -10,7 +37,7 @@ def dijkstra_search(graph: pathgraph.Graph, start: str, target: str):
 
     for key in graph.vertices():
         queue.append(key)
-        vertexes[key] = pathgraph.initialized_vertex(key)
+        vertexes[key] = initialized_vertex(key)
 
     if start not in vertexes.keys():
         raise KeyError("start node was not found in graph")
@@ -21,7 +48,12 @@ def dijkstra_search(graph: pathgraph.Graph, start: str, target: str):
     
     # While queue is not empty
     while len(queue) != 0:
-        current = pathgraph.lowest_cost_vertex(queue, vertexes)
+        current = lowest_cost_vertex(queue, vertexes)
+
+        if current.key not in queue:
+            # no more available neighbors 
+            return pathgraph.impossible_path()
+
         queue.remove(current.key)
 
         if current.key == target:
