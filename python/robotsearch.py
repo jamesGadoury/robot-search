@@ -6,7 +6,7 @@ def dijkstra_search(graph: pathgraph.Graph, start: str, target: str):
     vertexes = {}
 
     if start == target:
-        return []
+        return pathgraph.Path(steps=deque(), cost=0, possible=True)
 
     for key in graph.vertices():
         queue.append(key)
@@ -31,13 +31,14 @@ def dijkstra_search(graph: pathgraph.Graph, start: str, target: str):
             # dead end - if there are no more possible from keys then it is impossible to reach the destination:
             if len(queue) == 0:
                 return pathgraph.impossible_path()
-
             continue
 
         for destination in graph.edges[current.key]:
-            alt = current.cost + destination.cost
-            if alt < vertexes[destination.key].cost:
-                vertexes[destination.key].cost = alt
+            neighborCostFromCurrent = current.cost + destination.cost
+            # vertexes[destination.key].cost will be infinite if we haven't reached the vertex in our search yet
+            # otherwise, we have already seen it and should only update if this is the cheaper past
+            if neighborCostFromCurrent < vertexes[destination.key].cost:
+                vertexes[destination.key].cost = neighborCostFromCurrent
                 vertexes[destination.key].previousKey = current.key
 
     # Now read shortest path from start to target by reverse iteration
